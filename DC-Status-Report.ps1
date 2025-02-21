@@ -42,14 +42,14 @@ foreach ($DC in $DCs) {
         $dnsPortTest = Test-NetConnection -ComputerName $server -Port 53 -InformationLevel Quiet
         $dnsListening = if ($dnsPortTest -eq $true) { "Healthy (Port 53 Open)" } else { "DNS Not Responding" }
 
-        # Step 2: Perform a DNS lookup to check if the DC responds with itself as authoritative
-        $dnsQuery = Resolve-DnsName -Name $server -Server $server -ErrorAction SilentlyContinue
-        if ($dnsQuery) {
-            $authoritative = if ($dnsQuery.Flags -match "AA") { "Yes" } else { "No" }
-            $dnsResponse = "Healthy (Authoritative: $authoritative)"
+        # Step 2: Perform a DNS Query Test
+        $dnsTestResult = Resolve-DnsName $server -Type A -ErrorAction SilentlyContinue
+        if ($dnsTestResult -ne $null) {
+            $dnsQueryResult = "DNS Query Successful"
         } else {
-            $dnsResponse = "DNS Query Failed"
+            $dnsQueryResult = "DNS Query Failed: " + $Error[0]
         }
+        Write-Host $dnsQueryResult
     } catch { $dnsResponse = "Error Checking DNS" }
 
     # 4️⃣ Global Catalog Status
@@ -78,7 +78,7 @@ foreach ($DC in $DCs) {
         "Infrastructure Master" = $infrastructureMaster
         "Replication Status"    = $replicationStatus
         "DNS Status"            = $dnsListening
-        "DNS Query Result"      = $dnsResponse
+        "DNS Query Result"      = $dnsQueryResult
         "Global Catalog"        = $gcStatus
         "Time Sync"             = $timeSyncStatus
     }
